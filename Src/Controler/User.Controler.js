@@ -260,4 +260,157 @@ const LoginEndPoint = async (req, res) => {
   }
 };
 
-export { Register, Login, LogOut, LoginEndPoint };
+const UpdateDetails = async (req, res) => {
+  try {
+    const { UserName, Email, FullName } = req.body;
+
+    if ([UserName, Email, FullName].some((val) => !val || val?.trim() == "")) {
+      return res.status(404).json(new ApiError(404, "All Fields Are Required"));
+    }
+
+    // Find if Alredy Exits
+
+    const Exits = await User.findOne({
+      UserName: UserName.trim().toLowerCase(),
+    });
+    if (Exits) {
+      return res
+        .status(404)
+        .json(new ApiError(404, "This  UserName is Already Exits"));
+    }
+
+    // Update Details
+    const NewUser = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        $set: { UserName, Email, FullName },
+      },
+      { new: true }
+    ).select("-Password");
+
+    if (!NewUser) {
+      return res
+        .status(500)
+        .json(new ApiError(500, "Error Occur Will Update The User"));
+    }
+    // Return Statement
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { NewUser }, "User Updated Successfully"));
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(
+          404,
+          error.message,
+          "Error occur in Update Details Controler"
+        )
+      );
+  }
+};
+
+const UpdateAvatar = async (req, res) => {
+  try {
+    const Avatar = req?.file;
+    if (!Avatar) {
+      return res.status(404).json(new ApiError(404, "Avatar is Required"));
+    }
+    // Upload on Cloundinary
+    const AvatarUrl = await cloudinaryUpload(Avatar?.path);
+    if (!AvatarUrl) {
+      return res
+        .status(404)
+        .json(new ApiError(404, "Error Occur Will Upload Image On DB"));
+    }
+
+    // Update Doucment
+    const UpdateUser = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        $set: { Avatar: AvatarUrl?.url },
+      },
+      { new: true }
+    ).select("-Password");
+
+    if (!UpdateUser) {
+      return res
+        .status(500)
+        .json(new ApiError(500, "Error Occur Will Update The User Document"));
+    }
+
+    // Return Statement
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { UpdateUser }, "Avatar Updated Successfully")
+      );
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(
+          404,
+          error.message,
+          "Error Occur in  Update Avatar Controler"
+        )
+      );
+  }
+};
+const UpdateCoverImage = async (req, res) => {
+  try {
+    const CoverImage = req?.file;
+    if (!CoverImage) {
+      return res.status(404).json(new ApiError(404, "CoverImage is Required"));
+    }
+    // Upload on Cloundinary
+    const CoverImageUrl = await cloudinaryUpload(CoverImage?.path);
+    if (!CoverImageUrl) {
+      return res
+        .status(404)
+        .json(new ApiError(404, "Error Occur Will Upload Image On DB"));
+    }
+
+    // Update Doucment
+    const UpdateUser = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        $set: { CoverImage: CoverImageUrl?.url },
+      },
+      { new: true }
+    ).select("-Password");
+
+    if (!UpdateUser) {
+      return res
+        .status(500)
+        .json(new ApiError(500, "Error Occur Will Update The User Document"));
+    }
+
+    // Return Statement
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { UpdateUser }, "CoverImage Updated Successfully")
+      );
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(
+          404,
+          error.message,
+          "Error Occur in  Update Avatar Controler"
+        )
+      );
+  }
+};
+
+export {
+  Register,
+  Login,
+  LogOut,
+  LoginEndPoint,
+  UpdateDetails,
+  UpdateAvatar,
+  UpdateCoverImage,
+};

@@ -20,6 +20,7 @@ export const cloudinaryUpload = async (path) => {
     const uploadResult = await cloudinary.uploader.upload(path, {
       resource_type: "auto",
     });
+
     fs.unlinkSync(path);
 
     return uploadResult;
