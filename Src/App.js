@@ -15,4 +15,13 @@ app.use(express.urlencoded({ extended: false, limit: "16kb" }));
 app.use(cookieParser());
 app.use(express.static("Public"));
 
+// Routes
+import userroute from "./Route/User.Route.js";
+import videoroute from "./Route/Video.Route.js";
+import subscriptionroute from "./Route/Subscription.Route.js";
+
+app.use("/api/v1/Users", userroute);
+app.use("/api/v1/Videos", videoroute);
+app.use("/api/v1/Subscriptions", subscriptionroute);
+
 export { app };

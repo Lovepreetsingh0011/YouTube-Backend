@@ -1,6 +1,8 @@
 export class ApiError extends Error {
-  constructor(status, message) {
+  constructor(status, message, CustomMsg = "Something error") {
     super(message);
-    (this.message = message), (this.status = status);
+    (this.Msg = message), (this.Status = status);
+    this.Success = false;
+    this.CustomMsg = CustomMsg;
   }
 }
