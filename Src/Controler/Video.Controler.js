@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Video } from "../Model/Video.Model.js";
 import { ApiError } from "../Utils/ApiError.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
@@ -161,4 +162,201 @@ const DeleteVideo = async (req, res) => {
       );
   }
 };
-export { UploadVideo, UpdateDetails, DeleteVideo };
+const GetAllVideos = async (req, res) => {
+  try {
+    const videos = await Video.find().populate("CreatedBy");
+
+    if (!videos?.length) {
+      return res.status(404).json(new ApiError(404, "Error will find videos"));
+    }
+
+    // Return Statement
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { videos }, "Videos Gets Successfully"));
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(
+          404,
+          error.message,
+          "Error Occur in GetAllVideos Controler"
+        )
+      );
+  }
+};
+const GetVideosById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(404).json(new ApiError(404, "id is Requred"));
+    }
+
+    const video = await Video.findById(id);
+
+    if (!video) {
+      return res.status(404).json(new ApiError(404, "Error will find video"));
+    }
+
+    // Return Statement
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { video }, "Video Get Successfully"));
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(
+          404,
+          error.message,
+          "Error Occur in Get Video by Id Controler"
+        )
+      );
+  }
+};
+
+const GetVideoWithDetails = async (req, res) => {
+  try {
+    const { Videoid } = req.params;
+    if (!Videoid) {
+      return res.status(404).json(new ApiError(404, "Videoid is Requred"));
+    }
+
+    const result = await Video.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(Videoid),
+        },
+      },
+      {
+        $lookup: {
+          from: "likes",
+          localField: "_id",
+          foreignField: "Video",
+          as: "Likes",
+        },
+      },
+      {
+        $lookup: {
+          from: "comments",
+          localField: "_id",
+          foreignField: "Video",
+          as: "Comments",
+          pipeline: [
+            {
+              $lookup: {
+                from: "users",
+                localField: "CommentBy",
+                foreignField: "_id",
+                as: "User_D",
+                pipeline: [
+                  {
+                    $project: {
+                      UserName: 1,
+                      FullName: 1,
+                      Email: 1,
+                      Avatar: 1,
+                    },
+                  },
+                ],
+              },
+            },
+            {
+              $addFields: {
+                UserDetails: {
+                  $first: "$User_D",
+                },
+              },
+            },
+            {
+              $project: {
+                UserDetails: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          TotalLikes: {
+            $size: "$Likes",
+          },
+          TotalComments: {
+            $size: "$Comments",
+          },
+          TotalViews: {
+            $size: "$Views",
+          },
+        },
+      },
+      {
+        $project: {
+          TotalViews: 1,
+          TotalLikes: 1,
+          TotalComments: 1,
+          Comments: 1,
+          VideoFile: 1,
+          ThumbNail: 1,
+          CreatedBy: 1,
+          Title: 1,
+          Description: 1,
+          Duration: 1,
+          IsPublished: 1,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      },
+    ]);
+
+    // Return Statement
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { result }, "Successfully find Video details")
+      );
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(
+          404,
+          error.message,
+          "Error Occur in GetVideoWithDetails Controler"
+        )
+      );
+  }
+};
+const AddViewsOfVideo = async (req, res) => {
+  try {
+    const { Videoid } = req.params;
+    if (!Videoid) {
+      return res.status(404).json(new ApiError(404, "Video id is Required"));
+    }
+    const data = await Video.findByIdAndUpdate(
+      Videoid,
+      { $push: { Views: req?.user?._id } },
+      { new: true }
+    );
+
+    if (!data) {
+      return res.status(404).json(new ApiError(404, "!! Cannot add View"));
+    }
+    return res.status(200).json(new ApiResponse(200, {}, "view Added"));
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(404, error.message, "Error Occur in  View Add Controler")
+      );
+  }
+};
+export {
+  UploadVideo,
+  UpdateDetails,
+  DeleteVideo,
+  GetAllVideos,
+  GetVideosById,
+  GetVideoWithDetails,
+  AddViewsOfVideo,
+};
