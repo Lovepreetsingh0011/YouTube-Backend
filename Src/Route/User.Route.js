@@ -1,8 +1,11 @@
 import { Router } from "express";
 import {
+  GetChanelProfile,
+  GetHistory,
   Login,
   LoginEndPoint,
   LogOut,
+  AddWatchHistory,
   Register,
   UpdateAvatar,
   UpdateCoverImage,
@@ -31,4 +34,9 @@ router
   .route("/UpdateCoverImage")
   .post(Upload.single("CoverImage"), AuthMiddelware, UpdateCoverImage);
 
+router
+  .route("/GetChanelProfile/:UserName")
+  .get(AuthMiddelware, GetChanelProfile);
+router.route("/GetHistory").get(AuthMiddelware, GetHistory);
+router.route("/AddWatchHistory/:id").get(AuthMiddelware, AddWatchHistory);
 export default router;

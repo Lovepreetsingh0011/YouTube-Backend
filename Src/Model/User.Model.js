@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 const userschema = new mongoose.Schema(
   {
     UserName: {
@@ -80,4 +81,6 @@ userschema.methods.GenRefreshToken = function () {
 userschema.methods.isPasswordCorrect = async function (Password) {
   return await bcrypt.compare(Password, this.Password);
 };
+
+userschema.plugin(aggregatePaginate);
 export const User = mongoose.model("User", userschema);

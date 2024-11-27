@@ -3,6 +3,7 @@ import { User } from "../Model/User.Model.js";
 import { cloudinaryUpload } from "../Utils/Cloudinary.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 // Register  User
 
 const Register = async (req, res) => {
@@ -405,6 +406,205 @@ const UpdateCoverImage = async (req, res) => {
   }
 };
 
+const GetChanelProfile = async (req, res) => {
+  try {
+    const { UserName } = req.params;
+    if (!UserName) {
+      return res.status(404).json(new ApiError(404, "UserName is Required"));
+    }
+
+    const result = await User.aggregate([
+      {
+        $match: {
+          UserName: UserName?.toLowerCase(),
+        },
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "Chanel",
+          as: "Subscribers",
+        },
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "Subcriber",
+          as: "SubscriberTo",
+        },
+      },
+      {
+        $lookup: {
+          from: "videos",
+          localField: "_id",
+          foreignField: "CreatedBy",
+          as: "Videos",
+        },
+      },
+
+      {
+        $addFields: {
+          Subscribers: {
+            $size: "$Subscribers",
+          },
+          SubscriberTo: {
+            $size: "$SubscriberTo",
+          },
+          IsSubscribed: {
+            $cond: {
+              if: { $in: [req?.user?._id, "$Subscribers.Subcriber"] },
+              then: true,
+              else: false,
+            },
+          },
+        },
+      },
+
+      {
+        $project: {
+          UserName: 1,
+          Email: 1,
+          FullName: 1,
+          Avatar: 1,
+          CoverImage: 1,
+          Subscribers: 1,
+          SubscriberTo: 1,
+          IsSubscribed: 1,
+          Videos: 1,
+        },
+      },
+    ]);
+    if (!result?.length) {
+      return res.status(404).json(new ApiError(404, "Incoorect UserName "));
+    }
+
+    // Return Statement
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { result }, "Channel Profile get Successfully")
+      );
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(
+          404,
+          error.message,
+          "Error Occur in  GetChanelProfile   Controler"
+        )
+      );
+  }
+};
+
+const GetHistory = async (req, res) => {
+  try {
+    const result = await User.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(req.user._id),
+        },
+      },
+      {
+        $lookup: {
+          from: "videos",
+          localField: "WatchHistory",
+          foreignField: "_id",
+          as: "History",
+          pipeline: [
+            {
+              $lookup: {
+                from: "users",
+                localField: "CreatedBy",
+                foreignField: "_id",
+                as: "UserDetails",
+                pipeline: [
+                  {
+                    $project: {
+                      UserName: 1,
+                      Email: 1,
+                      FullName: 1,
+                      Avatar: 1,
+                      CoverImage: 1,
+                    },
+                  },
+                ],
+              },
+            },
+            {
+              $addFields: {
+                Owner: {
+                  $first: "$UserDetails",
+                },
+              },
+            },
+            {
+              $project: {
+                Owner: 1,
+                VideoFile: 1,
+                ThumbNail: 1,
+                CreatedBy: 1,
+                Title: 1,
+                Description: 1,
+                Duration: 1,
+                Views: 1,
+                IsPublished: 1,
+                createdAt: 1,
+                updatedAt: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $project: {
+          History: 1,
+        },
+      },
+    ]);
+
+    return res.json(result);
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(404, error.message, "Error Occur in  GetHistory Controler")
+      );
+  }
+};
+
+const AddWatchHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(404).json(new ApiError(404, "id is Required"));
+    }
+    const data = await User.findByIdAndUpdate(
+      req.user._id,
+      { $push: { WatchHistory: id } },
+      { new: true }
+    );
+
+    if (!data) {
+      return res.status(404).json(new ApiError(404, "!! Cannot add history"));
+    }
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { data }, "History Added"));
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(
+          404,
+          error.message,
+          "Error Occur in  History Add Controler"
+        )
+      );
+  }
+};
 export {
   Register,
   Login,
@@ -413,4 +613,7 @@ export {
   UpdateDetails,
   UpdateAvatar,
   UpdateCoverImage,
+  GetChanelProfile,
+  GetHistory,
+  AddWatchHistory,
 };

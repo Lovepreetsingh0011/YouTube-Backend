@@ -132,6 +132,14 @@ const DeleteVideo = async (req, res) => {
       return res.status(404).json(new ApiError(404, "Video id Required"));
     }
 
+    const vid = await Video.findById(id);
+    if (!vid) {
+      return res.status(404).json(new ApiError(404, "Video Not Exits"));
+    }
+    if (!vid.CreatedBy.equals(req.user._id)) {
+      return res.status(404).json(new ApiError(404, "UnAuthorized Access"));
+    }
+
     const result = await Video.findByIdAndDelete(id);
     if (!result) {
       return res
