@@ -9,6 +9,7 @@ import {
   GetVideoWithDetails,
   UpdateDetails,
   UploadVideo,
+  GetUserVideos,
 } from "../Controler/Video.Controler.js";
 const router = Router();
 router.use(AuthMiddelware);
@@ -24,5 +25,6 @@ router.route("/GetAllVideos").get(GetAllVideos);
 router.route("/GetVideoById/:id").get(GetVideosById);
 router.route("/GetVideoDetails/:Videoid").get(GetVideoWithDetails);
 router.route("/AddView/:Videoid").get(AddViewsOfVideo);
+router.route("/GetUserVideos").get(GetUserVideos);
 
 export default router;

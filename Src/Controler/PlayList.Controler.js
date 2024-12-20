@@ -160,9 +160,57 @@ const DeletePlayList = async (req, res) => {
   }
 };
 
+const GetUserPlayListById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(404).json(new ApiError(404, "PlayListid is Requred"));
+    }
+    const platlist = await PlayList.findById(id).populate("Videos");
+
+    // Return Statement
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { platlist }, "PlayList Gets Successfully"));
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(
+          404,
+          error.message,
+          "Error Occur in GetUserPlayListById Controler"
+        )
+      );
+  }
+};
+const GetUserPlayLists = async (req, res) => {
+  try {
+    const platlist = await PlayList.find({
+      CreatedBy: req?.user?._id,
+    }).populate("Videos");
+
+    // Return Statement
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { platlist }, "PlayList Gets Successfully"));
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(
+          404,
+          error.message,
+          "Error Occur in GetUserAllPlayList Controler"
+        )
+      );
+  }
+};
 export {
   CreatePlayList,
   AddVideosInPlayList,
   RemoveVideoFromPlaylist,
   DeletePlayList,
+  GetUserPlayLists,
+  GetUserPlayListById,
 };

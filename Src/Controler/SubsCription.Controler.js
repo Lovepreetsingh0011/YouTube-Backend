@@ -6,16 +6,19 @@ import { ApiResponse } from "../Utils/ApiResponse.js";
 
 const Subcribe = async (req, res) => {
   try {
-    const { Chanel, Userid } = req.body;
+    const { Chanel } = req.body;
 
     if (!Chanel || Chanel?.trim() == "") {
       return res.status(404).json(new ApiError(404, "Channel id is Required"));
     }
-    if (!Userid || Userid?.trim() == "") {
-      return res.status(404).json(new ApiError(404, "Userid id is Required"));
-    }
+    // if (!Userid || Userid?.trim() == "") {
+    //   return res.status(404).json(new ApiError(404, "Userid id is Required"));
+    // }
 
-    const result = await Subscription.create({ Chanel, Subcriber: Userid });
+    const result = await Subscription.create({
+      Chanel,
+      Subcriber: req?.user?._id,
+    });
     if (!result) {
       return res
         .status(404)
@@ -40,17 +43,14 @@ const Subcribe = async (req, res) => {
 
 const UnSubscribe = async (req, res) => {
   try {
-    const { Chanel, Userid } = req.body;
+    const { Chanel } = req.body;
 
     if (!Chanel || Chanel?.trim() == "") {
       return res.status(404).json(new ApiError(404, "Channel id is Required"));
     }
-    if (!Userid || Userid?.trim() == "") {
-      return res.status(404).json(new ApiError(404, "Userid id is Required"));
-    }
 
     const doc = await Subscription.findOne({
-      $and: [{ Subcriber: Userid }, { Chanel: Chanel }],
+      $and: [{ Subcriber: req?.user?._id }, { Chanel: Chanel }],
     });
     if (!doc) {
       return res.status(404).json(new ApiError(404, "Cannot find Document"));
@@ -214,5 +214,32 @@ const SubscribersOrSubscribeTo = async (req, res) => {
       );
   }
 };
+const CheckIsSubcribe = async (req, res) => {
+  try {
+    const { Chanel } = req.body;
 
-export { SubscribersOrSubscribeTo, Subcribe, UnSubscribe };
+    if (!Chanel || Chanel?.trim() == "") {
+      return res.status(404).json(new ApiError(404, "Channel id is Required"));
+    }
+
+    const result = await Subscription.findOne({
+      $and: [{ Subcriber: req?.user?._id }, { Chanel: Chanel }],
+    });
+    if (!result) {
+      return res.status(200).json({ Success: false, Msg: "NotSubscribe" });
+    } else {
+      return res.status(200).json({ Success: true, Msg: "Subscribed" });
+    }
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(
+          404,
+          error.message,
+          "Error Occur in Create Subcribe Document Controler"
+        )
+      );
+  }
+};
+export { SubscribersOrSubscribeTo, Subcribe, UnSubscribe, CheckIsSubcribe };

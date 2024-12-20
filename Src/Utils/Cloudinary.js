@@ -8,10 +8,15 @@ import fs from "fs";
 //   api_secret: process.env.API_SECRET,
 // });
 cloudinary.config({
-  cloud_name: "dk1htsljm",
-  api_key: "137838484427123",
-  api_secret: "_ZK0IpBZVp9CsqfC2R98aINaDpk", // Click 'View API Keys' above to copy your API secret
+  cloud_name: "dlswmuuka",
+  api_key: "669243533261796",
+  api_secret: "Z3nyFWJg0ARHCrhn6dUhU2nadvU", // Click 'View API Keys' above to copy your API secret
 });
+// cloudinary.config({
+//   cloud_name: "dk1htsljm",
+//   api_key: "137838484427123",
+//   api_secret: "_ZK0IpBZVp9CsqfC2R98aINaDpk", // Click 'View API Keys' above to copy your API secret
+// });
 
 export const cloudinaryUpload = async (path) => {
   try {

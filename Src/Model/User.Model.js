@@ -39,6 +39,9 @@ const userschema = new mongoose.Schema(
     ReffreshToken: {
       type: String,
     },
+    OTP: {
+      type: String,
+    },
     WatchHistory: [
       {
         type: mongoose.Types.ObjectId,
@@ -49,11 +52,11 @@ const userschema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userschema.pre("save", async function (next) {
-  if (!this.isModified("Password")) return next();
-  this.Password = await bcrypt.hash(this.Password, 10);
-  next();
-});
+// userschema.pre("save", async function (next) {
+//   if (!this.isModified("Password")) return next();
+//   this.Password = await bcrypt.hash(this.Password, 10);
+//   next();
+// });
 
 userschema.methods.GenAccessToken = function () {
   return jwt.sign(

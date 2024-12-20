@@ -174,76 +174,35 @@ const GetLikedVideos = async (req, res) => {
       );
   }
 };
-// const GetLikedVideos = async (req, res) => {
-//   try {
-//     const result = await User.aggregate([
-//       {
-//         $match: {
-//           _id: new mongoose.Types.ObjectId(req.user._id),
-//         },
-//       },
-//       {
-//         $lookup: {
-//           from: "likes",
-//           localField: "_id",
-//           foreignField: "LikeBy",
-//           as: "LikedVideos",
-//           pipeline: [
-//             {
-//               $lookup: {
-//                 from: "videos",
-//                 localField: "Video",
-//                 foreignField: "_id",
-//                 as: "VideosD",
-//               },
-//             },
-//             {
-//               $addFields: {
-//                 VideoDetails: {
-//                   $first: "$VideosD",
-//                 },
-//               },
-//             },
-//             {
-//               $project: {
-//                 VideoDetails: 1,
-//               },
-//             },
-//           ],
-//         },
-//       },
-//       {
-//         $addFields: {
-//           TotalLiked: {
-//             $size: "$LikedVideos",
-//           },
-//         },
-//       },
-//       {
-//         $project: {
-//           TotalLiked: 1,
-//           LikedVideos: 1,
-//         },
-//       },
-//     ]);
+const CheckIfVideoAlredyLiked = async (req, res) => {
+  try {
+    const { Videoid } = req.body;
 
-//     // Return statement
-//     return res
-//       .status(200)
-//       .json(
-//         new ApiResponse(200, { result }, " successfully Finded Liked Videos")
-//       );
-//   } catch (error) {
-//     return res
-//       .status(404)
-//       .json(
-//         new ApiError(
-//           404,
-//           error.message,
-//           "Error Occur in GetLikedVideos  Controler"
-//         )
-//       );
-//   }
-// };
+    if (!Videoid) {
+      return res.status(404).json(new ApiError(404, "Videoid   is required "));
+    }
+    if (Videoid?.trim() == "") {
+      return res.status(404).json(new ApiError(404, "Videoid   is required "));
+    }
 
-export { GetLikedVideos, DisLike, AddLike };
+    const result = await Like.findOne({
+      $and: [{ LikeBy: req?.user?._id }, { Video: Videoid }],
+    });
+
+    if (!result) {
+      return res.status(200).json({ Success: false, Msg: "Video Not Liked" });
+    } else {
+      return res
+        .status(200)
+        .json({ Success: true, result, Msg: "Video Liked" });
+    }
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(404, error.message, "Error Occur in AddLike  Controler")
+      );
+  }
+};
+
+export { GetLikedVideos, DisLike, AddLike, CheckIfVideoAlredyLiked };

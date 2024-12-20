@@ -4,6 +4,27 @@ import { cloudinaryUpload } from "../Utils/Cloudinary.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
+
+import nodemailer from "nodemailer";
+// const transporter = nodemailer.createTransport({
+//   host: "smtp.ethereal.email",
+//   port: 587,
+//   auth: {
+//     user: "roscoe.waters@ethereal.email",
+//     pass: "Xqup6cQXnXkDW9MDsw",
+//   },
+// });
+const transporter = await nodemailer.createTransport({
+  service: "gmail",
+  secure: true,
+  port: 465,
+  auth: {
+    user: "lovepreetsin9292@gmail.com",
+    pass: "gwel hbha gjpr omub ",
+  },
+});
+
 // Register  User
 
 const Register = async (req, res) => {
@@ -43,12 +64,14 @@ const Register = async (req, res) => {
       CoverImageUrl = await cloudinaryUpload(CoverImagePath[0]?.path);
     }
 
+    let hashpass = await bcrypt.hash(Password, 10);
+
     // Create
     const user = await User.create({
       UserName,
       Email,
       FullName,
-      Password,
+      Password: hashpass,
       Avatar: AvatarUrl?.url,
       CoverImage: CoverImageUrl?.url,
     });
@@ -310,7 +333,155 @@ const UpdateDetails = async (req, res) => {
       );
   }
 };
+const SendOTP = async (req, res) => {
+  try {
+    const { Email } = req.body;
 
+    if (!Email) {
+      return res.status(404).json(new ApiError(404, " Email Are Required"));
+    }
+
+    if (Email && Email?.trim() == "") {
+      return res.status(404).json(new ApiError(404, " Email Cant be Emplty"));
+    }
+
+    // Find The  Model
+
+    let exits = await User.findOne({ Email });
+
+    if (!exits) {
+      return res.status(404).json(new ApiError(404, "Invalid Email "));
+    }
+
+    const otp = Math.floor((Math.random() + 1) * 1000);
+
+    const info = await transporter.sendMail({
+      from: "lovepreetsin9264@gmail.com", // sender address
+      to: exits?.Email, // list of receivers
+      subject: "Pasword Update OTP", // Subject line
+      text: `OTP ${otp}`, // plain text body
+      // html: "<b>Hello world?</b>", // html body
+    });
+
+    if (!info) {
+      return res
+        .status(500)
+        .json(new ApiError(500, "Error Occur Will Send The Email"));
+    } else {
+      await User.findByIdAndUpdate(exits?._id, {
+        $set: { OTP: otp },
+      });
+    }
+    // Return Statement
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { Email: exits?.Email, Success: true },
+          "OTP Send Successfully"
+        )
+      );
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(404, error.message, "Error occur in SendOTP Controler")
+      );
+  }
+};
+const CheckOTP = async (req, res) => {
+  try {
+    const { Email, OTP } = req.body;
+
+    if (!Email && !OTP) {
+      return res.status(404).json(new ApiError(404, " Fields Are Required"));
+    }
+
+    if (Email && Email?.trim() == "") {
+      return res.status(404).json(new ApiError(404, " Email Cant be Emplty"));
+    }
+    if (OTP && OTP?.trim() == "") {
+      return res.status(404).json(new ApiError(404, " OTP Cant be Emplty"));
+    }
+
+    // Find The  Model
+
+    let exits = await User.findOne({ Email });
+    if (!exits) {
+      return res.status(404).json(new ApiError(404, "Invalid Email "));
+    }
+    if (exits?.OTP !== OTP) {
+      return res.status(404).json(new ApiError(404, "Invalid Credentials "));
+    }
+    exits.OTP = "";
+    await exits.save();
+    // Return Statement
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { Email: exits?.Email, Success: true },
+          "OTP Send Successfully"
+        )
+      );
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(404, error.message, "Error occur in CheckOTP Controler")
+      );
+  }
+};
+const PasswordUpdate = async (req, res) => {
+  try {
+    const { Email, NewPassword } = req.body;
+
+    if (!Email && !NewPassword) {
+      return res.status(404).json(new ApiError(404, " Fields Are Required"));
+    }
+
+    if (Email && Email?.trim() == "") {
+      return res.status(404).json(new ApiError(404, " Email Cant be Emplty"));
+    }
+    if (NewPassword && NewPassword?.trim() == "") {
+      return res
+        .status(404)
+        .json(new ApiError(404, " NewPassword Cant be Emplty"));
+    }
+
+    // Find The  Model
+
+    let exits = await User.findOne({ Email });
+    if (!exits) {
+      return res.status(404).json(new ApiError(404, "Invalid Email "));
+    }
+
+    let hashpass = await bcrypt.hash(NewPassword, 10);
+
+    const result = await User.findByIdAndUpdate(
+      exits?._id,
+      {
+        $set: { Password: hashpass },
+      },
+      {
+        new: true,
+      }
+    );
+
+    // Return Statement
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { result }, "OTP Send Successfully"));
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(404, error.message, "Error occur in CheckOTP Controler")
+      );
+  }
+};
 const UpdateAvatar = async (req, res) => {
   try {
     const Avatar = req?.file;
@@ -538,6 +709,9 @@ const GetHistory = async (req, res) => {
                 Owner: {
                   $first: "$UserDetails",
                 },
+                TotalViews: {
+                  $size: "$Views",
+                },
               },
             },
             {
@@ -549,7 +723,7 @@ const GetHistory = async (req, res) => {
                 Title: 1,
                 Description: 1,
                 Duration: 1,
-                Views: 1,
+                TotalViews: 1,
                 IsPublished: 1,
                 createdAt: 1,
                 updatedAt: 1,
@@ -558,6 +732,13 @@ const GetHistory = async (req, res) => {
           ],
         },
       },
+      // {
+      //   $addFields: {
+      //     history: {
+      //       $first: "$History",
+      //     },
+      //   },
+      // },
       {
         $project: {
           History: 1,
@@ -565,7 +746,7 @@ const GetHistory = async (req, res) => {
       },
     ]);
 
-    return res.json(result);
+    return res.json(result[0]);
   } catch (error) {
     return res
       .status(404)
@@ -605,6 +786,74 @@ const AddWatchHistory = async (req, res) => {
       );
   }
 };
+
+const RemoveIdsFromHistory = async (req, res) => {
+  try {
+    const { Values } = req.body;
+    if (Values?.length < 0) {
+      return res.status(404).json(new ApiError(404, "id is Required"));
+    }
+
+    const result = await User.findByIdAndUpdate(
+      req?.user?._id,
+
+      {
+        $pull: {
+          WatchHistory: { $in: Values },
+        },
+      }
+    );
+
+    if (!result) {
+      return res
+        .status(404)
+        .json(new ApiError(404, "Eror ocuur will remove history "));
+    }
+
+    // Return Statement
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { result }, "History Removed  Successfully"));
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(
+          404,
+          error.message,
+          "Error Occur in  RemoveIdFromHistory   Controler"
+        )
+      );
+  }
+};
+const RemoveAllHistory = async (req, res) => {
+  try {
+    const result = await User.findByIdAndUpdate(req?.user?._id, {
+      WatchHistory: [],
+    });
+
+    if (!result) {
+      return res
+        .status(404)
+        .json(new ApiError(404, "Eror ocuur will remove history "));
+    }
+
+    // Return Statement
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { result }, "History Removed  Successfully"));
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(
+          404,
+          error.message,
+          "Error Occur in  RemoveIdFromHistory   Controler"
+        )
+      );
+  }
+};
 export {
   Register,
   Login,
@@ -616,4 +865,9 @@ export {
   GetChanelProfile,
   GetHistory,
   AddWatchHistory,
+  RemoveIdsFromHistory,
+  RemoveAllHistory,
+  SendOTP,
+  CheckOTP,
+  PasswordUpdate,
 };

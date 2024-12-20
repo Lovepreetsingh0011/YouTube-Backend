@@ -29,7 +29,6 @@ const UploadVideo = async (req, res) => {
 
     const VideoFileUrl = await cloudinaryUpload(VideoFilePath[0]?.path);
     const ThumbNailUrl = await cloudinaryUpload(ThumbNailPath[0]?.path);
-    console.log(VideoFileUrl);
 
     if (!VideoFileUrl) {
       return res
@@ -186,6 +185,26 @@ const GetAllVideos = async (req, res) => {
       );
   }
 };
+const GetUserVideos = async (req, res) => {
+  try {
+    const videos = await Video.find({ CreatedBy: req?.user?._id });
+
+    // Return Statement
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { videos }, "Videos Gets Successfully"));
+  } catch (error) {
+    return res
+      .status(404)
+      .json(
+        new ApiError(
+          404,
+          error.message,
+          "Error Occur in GetUserAllVideos Controler"
+        )
+      );
+  }
+};
 const GetVideosById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -239,6 +258,31 @@ const GetVideoWithDetails = async (req, res) => {
       },
       {
         $lookup: {
+          from: "users",
+          localField: "CreatedBy",
+          foreignField: "_id",
+          as: "user",
+          pipeline: [
+            {
+              $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "Chanel",
+                as: "subscribers",
+              },
+            },
+            {
+              $addFields: {
+                Subsribers: {
+                  $size: "$subscribers",
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
           from: "comments",
           localField: "_id",
           foreignField: "Video",
@@ -263,8 +307,39 @@ const GetVideoWithDetails = async (req, res) => {
               },
             },
             {
+              $lookup: {
+                from: "likes",
+                foreignField: "Comment",
+                localField: "_id",
+                as: "LikesComment",
+                pipeline: [
+                  {
+                    $lookup: {
+                      from: "users",
+                      localField: "LikeBy",
+                      foreignField: "_id",
+                      as: "User_d",
+                      pipeline: [
+                        {
+                          $project: {
+                            _id: 1,
+                            UserName: 1,
+                            FullName: 1,
+                            Avatar: 1,
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            },
+            {
               $addFields: {
                 UserDetails: {
+                  $first: "$User_D",
+                },
+                CommentDetails: {
                   $first: "$User_D",
                 },
               },
@@ -272,6 +347,8 @@ const GetVideoWithDetails = async (req, res) => {
             {
               $project: {
                 UserDetails: 1,
+                Content: 1,
+                CommentBy: 1,
               },
             },
           ],
@@ -288,10 +365,18 @@ const GetVideoWithDetails = async (req, res) => {
           TotalViews: {
             $size: "$Views",
           },
+          UserDetails: {
+            $first: "$user",
+          },
+          Comments: {
+            $first: "$Comments",
+          },
         },
       },
       {
         $project: {
+          Comments: 1,
+          UserDetails: 1,
           TotalViews: 1,
           TotalLikes: 1,
           TotalComments: 1,
@@ -359,4 +444,5 @@ export {
   GetVideosById,
   GetVideoWithDetails,
   AddViewsOfVideo,
+  GetUserVideos,
 };

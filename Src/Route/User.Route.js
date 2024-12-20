@@ -10,6 +10,11 @@ import {
   UpdateAvatar,
   UpdateCoverImage,
   UpdateDetails,
+  RemoveIdsFromHistory,
+  RemoveAllHistory,
+  SendOTP,
+  CheckOTP,
+  PasswordUpdate,
 } from "../Controler/User.Controler.js";
 import { Upload } from "../Middelware/Multer.js";
 import { AuthMiddelware } from "../Middelware/Auth.Middelware.js";
@@ -39,4 +44,11 @@ router
   .get(AuthMiddelware, GetChanelProfile);
 router.route("/GetHistory").get(AuthMiddelware, GetHistory);
 router.route("/AddWatchHistory/:id").get(AuthMiddelware, AddWatchHistory);
+router
+  .route("/RemoveSelectedHistory")
+  .put(AuthMiddelware, RemoveIdsFromHistory);
+router.route("/RemoveAllHistory").put(AuthMiddelware, RemoveAllHistory);
+router.route("/SendOTP").post(SendOTP);
+router.route("/CheckOTP").post(CheckOTP);
+router.route("/PasswordUpdate").put(PasswordUpdate);
 export default router;
