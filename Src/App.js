@@ -23,6 +23,10 @@ import commentroute from "./Route/Comment.Route.js";
 import likeroute from "./Route/Like.Route.js";
 import playlistroute from "./Route/PlayList.Route.js";
 
+app.get("/", (req, res) => {
+  res.send("Project is Run");
+});
+
 app.use("/api/v1/Users", userroute);
 app.use("/api/v1/Videos", videoroute);
 app.use("/api/v1/Subscriptions", subscriptionroute);
