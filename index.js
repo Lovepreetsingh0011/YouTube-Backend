@@ -4,7 +4,7 @@ import "dotenv/config";
 
 ConnectDb()
   .then(() => {
-    app.listen(process.env.PORT, () => {
+    app.listen(process.env.PORT || 6000, () => {
       console.log(`App is Listen At Port : ${process.env.PORT} `);
     });
   })
