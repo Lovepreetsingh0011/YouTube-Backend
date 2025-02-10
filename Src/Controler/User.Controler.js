@@ -169,7 +169,7 @@ const Login = async (req, res) => {
     // cookie Options
     const Options = {
       httpOnly: true,
-      secure: true,
+      secure: false,
     };
 
     // Return Statement
