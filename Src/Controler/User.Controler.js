@@ -168,8 +168,9 @@ const Login = async (req, res) => {
 
     // cookie Options
     const Options = {
-      httpOnly: true,
-      secure: false,
+      httpOnly: true, // Prevent JavaScript access
+      secure: true, // Use `false` for local testing if not on HTTPS
+      sameSite: "none",
     };
 
     // Return Statement
