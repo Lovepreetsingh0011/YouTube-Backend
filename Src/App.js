@@ -7,7 +7,7 @@ const app = express();
 app.use(express.json());
 app.use(
   cors({
-    origin: [URl1, URL2],
+    origin: "https://you-tube-frontend-tawny.vercel.app",
     credentials: true,
   })
 );
