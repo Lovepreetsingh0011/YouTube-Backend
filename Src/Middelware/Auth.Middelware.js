@@ -5,6 +5,7 @@ import { User } from "../Model/User.Model.js";
 export const AuthMiddelware = async (req, res, next) => {
   try {
     const token = req.cookies.AccessToken;
+    console.log(token);
 
     if (!token) {
       return res.status(404).json(new ApiError(404, "UnAuthorized Access"));
