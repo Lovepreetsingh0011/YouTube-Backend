@@ -21,6 +21,10 @@ import { AuthMiddelware } from "../Middelware/Auth.Middelware.js";
 const router = Router();
 
 router.route("/Register").post(
+  (req, res, next) => {
+    console.log("rruunn");
+    next();
+  },
   Upload.fields([
     { name: "Avatar", maxCount: 1 },
     { name: "CoverImage", maxCount: 1 },
