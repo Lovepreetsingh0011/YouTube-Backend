@@ -46,6 +46,7 @@ const Register = async (req, res) => {
         .status(404)
         .json(new ApiError(404, "UserName or Email is Already in Used "));
     }
+    console.log("run agiin");
 
     //  Image Validations
     let CoverImageUrl = "";
